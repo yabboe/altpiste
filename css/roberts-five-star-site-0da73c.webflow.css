@@ -12921,6 +12921,10 @@ strong {
     margin-bottom: 60px;
   }
 
+  .cthc {
+    width: 90%;
+  }
+
   .quote2, .quote3, .quote4 {
     flex: 0 auto;
     width: 100%;
@@ -14577,6 +14581,7 @@ strong {
     flex-flow: column;
     justify-content: center;
     align-items: flex-start;
+    margin-bottom: 10px;
   }
 
   .work_title._1-2 {
@@ -14828,6 +14833,13 @@ strong {
     width: 25vh;
     height: 40vh;
     right: 28px;
+  }
+
+  .resume_corp._2lkd.rsmel {
+    margin-top: 0;
+    margin-bottom: 8px;
+    margin-left: 0;
+    font-size: 18px;
   }
 
   .yaoheooo {
@@ -15107,6 +15119,7 @@ strong {
 
   .ctc {
     flex-flow: column;
+    margin-top: 20px;
     margin-bottom: 0;
   }
 
@@ -15126,6 +15139,10 @@ strong {
   .div-block-111 {
     flex-flow: column;
     margin-right: 14px;
+  }
+
+  .rsme_headcont {
+    flex-flow: column;
   }
 
   .neuslother {
