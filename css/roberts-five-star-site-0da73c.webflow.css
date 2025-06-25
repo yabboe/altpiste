@@ -3822,6 +3822,10 @@ strong {
   margin-bottom: 0;
 }
 
+.main-container-2._1.ctcton {
+  margin-bottom: 60px;
+}
+
 .paragraph_head_wrapper {
   background-color: #0000;
   margin-bottom: 24px;
@@ -6252,7 +6256,7 @@ strong {
 }
 
 .link_footer.resume {
-  padding: 20px 0 20px 10px;
+  padding: 20px 10px 20px 20px;
   font-size: 12px;
   font-weight: 700;
   display: flex;
@@ -6263,6 +6267,11 @@ strong {
   font-size: 12px;
   font-weight: 700;
   display: flex;
+}
+
+.link_footer.contact.lies.w--current {
+  padding-left: 10px;
+  padding-right: 0;
 }
 
 .link_footer.home {
@@ -6541,6 +6550,7 @@ strong {
 }
 
 .footer_container-copy.ulilll {
+  margin-top: -7px;
   margin-bottom: 0;
 }
 
@@ -11755,7 +11765,11 @@ strong {
   height: 20px;
   margin-top: 28px;
   margin-bottom: 0;
+  padding-right: 58px;
   display: flex;
+  position: relative;
+  top: 31px;
+  bottom: 0;
 }
 
 .image-59 {
@@ -15374,6 +15388,12 @@ strong {
 
   .arrow_icon-copy {
     width: 22px;
+  }
+
+  .div-block-116 {
+    padding-right: 31px;
+    position: relative;
+    top: 28px;
   }
 }
 
