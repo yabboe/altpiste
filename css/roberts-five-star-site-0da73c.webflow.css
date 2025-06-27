@@ -5963,7 +5963,7 @@ strong {
 
 ._3-col-p-3-4._1-4._5 {
   text-align: left;
-  width: 80%;
+  width: 90%;
   font-family: Suisseintl, Arial, sans-serif;
   font-size: 16px;
   font-weight: 400;
@@ -9527,7 +9527,7 @@ strong {
 }
 
 .section_paragraph.firstp {
-  width: 100%;
+  width: 90%;
   padding-top: 0;
 }
 
@@ -9755,6 +9755,7 @@ strong {
 }
 
 .p_anim {
+  width: 90%;
   margin-bottom: 10px;
 }
 
@@ -10278,6 +10279,11 @@ strong {
 
 .hero_bg_img_ddi.uvu_head {
   background-image: url('../images/homePhones_small.jpg');
+}
+
+.heading-21 {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .paragraph-23 {
