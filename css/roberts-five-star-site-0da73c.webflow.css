@@ -5394,6 +5394,10 @@ strong {
   width: 100%;
 }
 
+.item_all_container_ocp.first_lst {
+  margin-bottom: 20px;
+}
+
 .research-image-container3-half {
   box-sizing: border-box;
   object-fit: cover;
@@ -9698,6 +9702,10 @@ strong {
   width: 80%;
 }
 
+.item_paragraph.edit_rmv {
+  display: none;
+}
+
 .item_txt_container {
   padding-top: 10px;
   padding-bottom: 0;
@@ -11006,6 +11014,7 @@ strong {
 .image-57 {
   object-fit: cover;
   background-color: #fff;
+  margin-bottom: 20px;
 }
 
 .title_h2 {
