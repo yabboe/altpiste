@@ -1,4 +1,4 @@
-<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sat Jun 28 2025 03:03:22 GMT+0000 (Coordinated Universal Time)  -->
+<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sat Jun 28 2025 15:21:41 GMT+0000 (Coordinated Universal Time)  -->
 <html data-wf-page="67f47e3332fba62a49fbec06" data-wf-site="67dcd415f06695539aef47ff">
 <head>
   <meta charset="utf-8">
@@ -301,43 +301,54 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM loaded — initializing animations & page transitions");
   gsap.registerPlugin(ScrambleTextPlugin, ScrollTrigger, DrawSVGPlugin);
-  // === Page Transition Loader ===
-  gsap.to(".load_grid-item", {
-    opacity: 0,
-    duration: 0.001,
-    stagger: { amount: 0.5, from: "random" },
+// On initial page load (loader fading out with a static/pixelated effect)
+gsap.to(".load_grid-item", {
+    opacity: 0,    // Elements will fade out
+    scale: 0,      // Elements will shrink to 0 (like disappearing pixels)
+    duration: 0.15, // Individual item animation duration (faster)
+    stagger: {
+        amount: 0.3, // Total stagger time for all items (faster overall transition)
+        from: "random" // Items will disappear in a random order, enhancing the static feel
+    },
+    ease: "steps(3)", // Use SteppedEase for a crisp, 8-bit, non-smooth movement (3 steps)
     onComplete: () => {
-      gsap.set(".load_grid", { display: "none" });
+        // Once all individual items have animated out, hide the entire grid container
+        gsap.set(".load_grid", { display: "none" });
     }
-  });
-  $("a").on("click", function (e) {
+});
+// Intercept all internal link clicks to trigger the loader animation
+$("a").on("click", function (e) {
+    // Check if the link is an internal page link, not an anchor, and not opening in a new tab
     if (
-      $(this).prop("hostname") === window.location.host &&
-      $(this).attr("href").indexOf("#") === -1 &&
-      $(this).attr("target") !== "_blank"
+        $(this).prop("hostname") === window.location.host && // Is it an internal link?
+        $(this).attr("href").indexOf("#") === -1 &&         // Is it NOT an anchor link?
+        $(this).attr("target") !== "_blank"                  // Is it NOT opening in a new tab?
     ) {
-      e.preventDefault();
-      let destination = $(this).attr("href");
-      gsap.set(".load_grid", { display: "grid" });
-      gsap.fromTo(
-        ".load_grid-item",
-        { opacity: 0 },
-        {
-          opacity: 1,
-          duration: 0.001,
-          stagger: { amount: 0.5, from: "random" },
-          onComplete: () => {
-            window.location = destination;
-          }
-        }
-      );
+        e.preventDefault(); // Prevent the default navigation immediately
+        let destination = $(this).attr("href"); // Store the destination URL
+        // Make the loader grid visible instantly before the animation starts
+        gsap.set(".load_grid", { display: "grid" });
+        // On link click (loader fading in with a static/pixelated effect before navigating)
+        gsap.fromTo(
+            ".load_grid-item",
+            { opacity: 0, scale: 0 }, // Start state: transparent and shrunken
+            {
+                opacity: 1, // End state: fully opaque
+                scale: 1,   // End state: full size (like pixels appearing)
+                duration: 0.15, // Individual item animation duration (faster)
+                stagger: {
+                    amount: 0.35, // Total stagger time for all items (faster overall transition)
+                    from: "random" // Items will appear in a random order, enhancing the static feel
+                },
+                ease: "steps(3)", // Use SteppedEase for a crisp, 8-bit, non-smooth movement (3 steps)
+                onComplete: () => {
+                    // Once all individual items have animated in, navigate to the new page
+                    window.location = destination;
+                }
+            }
+        );
     }
-  });
-  window.onpageshow = function (event) {
-    if (event.persisted) {
-      window.location.reload();
-    }
-  };
+});
   // === Your Existing Animations ===
   // Scramble Text
   document.querySelectorAll('.scramble, .scramble_title, .nav_text').forEach(el => {
