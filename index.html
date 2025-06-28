@@ -1,4 +1,4 @@
-<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sat Jun 28 2025 15:21:41 GMT+0000 (Coordinated Universal Time)  -->
+<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sat Jun 28 2025 18:40:00 GMT+0000 (Coordinated Universal Time)  -->
 <html data-wf-page="683b673f0ff68ecf10e0a432" data-wf-site="67dcd415f06695539aef47ff">
 <head>
   <meta charset="utf-8">
@@ -436,7 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // On initial page load (loader fading out)
 gsap.to(".load_grid-item", {
   opacity: 0,
-  duration: 0.2, // Individual item fade duration: 0.3 seconds
+  duration: 0.3, // Individual item fade duration: 0.3 seconds
   stagger: {
     amount: 0.4, // Total stagger time for all items: 0.45 seconds
     from: "random"
@@ -461,9 +461,9 @@ $("a").on("click", function (e) {
       { opacity: 0 }, // Start from transparent
       {
         opacity: 1, // End at fully opaque
-        duration: 0.3, // Individual item fade duration: 0.3 seconds
+        duration: 0.1, // Individual item fade duration: 0.3 seconds
         stagger: {
-          amount: 0.3, // Total stagger time for all items: 0.45 seconds
+          amount: 0.45, // Total stagger time for all items: 0.45 seconds
           from: "random"
         },
         ease: "power3.in", // More pronounced smooth acceleration
