@@ -1,4 +1,4 @@
-<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Tue Jul 01 2025 21:39:05 GMT+0000 (Coordinated Universal Time)  -->
+<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Wed Jul 02 2025 19:59:28 GMT+0000 (Coordinated Universal Time)  -->
 <html data-wf-page="683e23c9322bf7f80b65b6d7" data-wf-site="67dcd415f06695539aef47ff">
 <head>
   <meta charset="utf-8">
@@ -37,6 +37,25 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     background-size: 100% auto !important;
     background-position: center top !important;
   }
+}
+.video-container {
+  position: relative;
+  width: 100%;
+  /* Calculate padding-top based on your video's ACTUAL aspect ratio */
+  padding-top: calc(1080 / 1920 * 100%); /* For 1920x1080 video */
+  overflow: hidden;
+  background: black; /* Optional: shows black bars if aspect ratio doesn't match */
+}
+.video-container video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain; /* CHANGED FROM 'cover' to 'contain' */
 }
 </style>
 </head>
@@ -228,9 +247,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             <p class="section_paragraph">Building on insights from our research into legacy system inefficiencies, the design iteration phase transformed the outdated interface into a modern, highly efficient platform. This iterative approach refined user flows and enhanced usability, directly addressing identified pain points. The resulting intuitive and dynamic high-fidelity interface consolidates complex agent workflows, streamlining navigation, search, and order processing for both new and advanced users. Below, observe the visual evolution of key screens, from the existing interface to wireframe concepts and final designs.</p>
           </div>
         </div>
-        <div class="item_all_container_ocp gif">
-          <div class="item_img_cont"><img src="images/fluidui.gif" loading="lazy" alt="fluid interface animation" class="image-57"></div>
-        </div>
+        <div class="item_all_container_ocp gif"></div>
+        <div class="item_img_cont"><img src="images/fluidui.gif" loading="lazy" alt="fluid interface animation" class="image-57"></div>
         <div class="title-container-3 wicl neue">
           <div data-w-id="e11360ad-e22f-4e89-59ef-f36f61a2fc91" style="width:0%;height:1px" class="divline_2"></div>
           <div class="_2_subhead js uiok">

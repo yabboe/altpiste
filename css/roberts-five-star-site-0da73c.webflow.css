@@ -2903,6 +2903,10 @@ strong {
   padding-left: 0;
 }
 
+.item_title.headline.sdlle {
+  margin-bottom: 0;
+}
+
 .item_title.persona {
   margin-top: 8px;
   margin-bottom: 12px;
@@ -9739,9 +9743,9 @@ strong {
 .home_desc {
   width: 80%;
   font-family: Suisseintl, Arial, sans-serif;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 400;
-  line-height: 33px;
+  line-height: 150%;
 }
 
 .home_desc.r4sm {
@@ -11155,6 +11159,7 @@ strong {
   object-fit: cover;
   background-color: #fff;
   margin-bottom: 20px;
+  overflow: visible;
 }
 
 .title_h2 {
@@ -11176,7 +11181,14 @@ strong {
 }
 
 .heading-27 {
+  font-size: 64px;
   font-weight: 500;
+  line-height: 130%;
+}
+
+.heading-27.hl1 {
+  margin-top: 0;
+  line-height: 120%;
 }
 
 .paragraph-25 {
@@ -12658,6 +12670,10 @@ strong {
   display: flex;
 }
 
+.video-container {
+  margin-top: 40px;
+}
+
 @media screen and (max-width: 991px) {
   .container-7 {
     width: 100%;
@@ -13743,7 +13759,13 @@ strong {
     align-items: center;
   }
 
-  .home_desc, .home_desc.r4sm {
+  .home_desc {
+    width: 90%;
+    font-size: 18px;
+    line-height: 30px;
+  }
+
+  .home_desc.r4sm {
     font-size: 20px;
     line-height: 30px;
   }
@@ -13982,6 +14004,11 @@ strong {
   .heading-27 {
     font-size: 84px;
     font-weight: 500;
+  }
+
+  .heading-27.hl1 {
+    letter-spacing: -.8px;
+    font-size: 48px;
   }
 
   .logos {
@@ -14640,7 +14667,16 @@ strong {
     right: 11px;
   }
 
-  .section_paragraph.firstp, .h2_anim.refine {
+  .section_paragraph.firstp {
+    margin-bottom: 0;
+  }
+
+  .home_desc.r4sm {
+    font-size: 18px;
+    line-height: 27px;
+  }
+
+  .h2_anim.refine {
     margin-bottom: 0;
   }
 
@@ -14732,6 +14768,11 @@ strong {
 
   .title_h2.z-dl {
     margin-bottom: 0;
+  }
+
+  .heading-27.hl1 {
+    letter-spacing: -1px;
+    font-size: 36px;
   }
 
   .problemgoals, .kyusers {
@@ -16517,13 +16558,13 @@ strong {
   .home_desc {
     width: 100%;
     font-family: Suisseintl, Arial, sans-serif;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 400;
     line-height: 27px;
   }
 
   .home_desc.r4sm {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 27px;
   }
 
@@ -16810,6 +16851,11 @@ strong {
 
   .heading-27 {
     font-size: 36px;
+  }
+
+  .heading-27.hl1 {
+    letter-spacing: -1px;
+    font-size: 24px;
   }
 
   .logos {
