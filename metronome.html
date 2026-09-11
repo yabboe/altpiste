@@ -399,6 +399,41 @@
   const LOOKAHEAD=25, SCHEDULE_AHEAD=0.14, queue=[];
   const buffers={main:null,accent:null};
   function makeCtx(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
+  // Automatically load default audio files from your repository root
+// Store the raw file data
+let rawMain = null;
+let rawAccent = null;
+
+async function loadDefaultSamples() {
+  try {
+    const [resMain, resAccent] = await Promise.all([
+      fetch('mainBeat_final.mp3'),
+      fetch('beat4_final.mp3')
+    ]);
+
+    rawMain = await resMain.arrayBuffer();
+    rawAccent = await resAccent.arrayBuffer();
+  } catch (err) {
+    console.error('Failed to fetch default samples:', err);
+  }
+}
+
+// Ensure context is initialized and samples are decoded on first user interaction
+async function ensureSamplesDecoded() {
+  makeCtx();
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
+  }
+  if (rawMain && !buffers.main) {
+    buffers.main = await audioCtx.decodeAudioData(rawMain.slice(0));
+  }
+  if (rawAccent && !buffers.accent) {
+    buffers.accent = await audioCtx.decodeAudioData(rawAccent.slice(0));
+  }
+}
+
+// Fetch raw MP3 data on page load
+loadDefaultSamples();
   function playSynth(time,acc){
     const o=audioCtx.createOscillator(),g=audioCtx.createGain();
     o.frequency.value=acc?1180:760;o.type="square";
