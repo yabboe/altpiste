@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROWING METRONOME</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000;
+    --line:#2a2d30;
+    --line-hi:#3a3e42;
+    --ink:#d7d9dc;
+    --hot:#f4f5f6;
+    --sel:#33383c;
+    --sel-ink:#e6e8ea;
+    --dim:#71767b;
+    --dimmer:#4a4e52;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#000;color:var(--ink);
+    font-family:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+    display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:26px;
+    letter-spacing:.02em;-webkit-font-smoothing:antialiased;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.05;
+    background:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .instrument{width:100%;max-width:1180px;border:1px solid var(--line);position:relative}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;background:var(--line)}
+  .cell{background:#000;position:relative}
+  .pad{padding:16px 18px}
+  .lbl{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+  .brand{grid-column:span 8;display:flex;align-items:center;gap:12px}
+  .brand .mark{width:9px;height:9px;background:var(--ink)}
+  .brand b{font-weight:500;letter-spacing:.24em;font-size:12px;text-transform:uppercase}
+  .brand span{color:var(--dim);font-size:11px;letter-spacing:.2em}
+  /* ---- menu (dot) button, upper-left ---- */
+  .menudot{width:26px;height:26px;border:1px solid var(--line);background:#000;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;padding:0}
+  .menudot:hover{background:#111}
+  .menudot svg{width:4px;height:16px;display:block}
+  .menuwrap{position:relative}
+  .menu{position:absolute;left:0;top:32px;z-index:30;min-width:150px;border:1px solid var(--line-hi);
+    background:#000;display:none;box-shadow:0 8px 30px rgba(0,0,0,.7)}
+  .menu.open{display:block}
+  .menu button{width:100%;background:#000;border:none;border-bottom:1px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    text-align:left;padding:12px 14px;cursor:pointer}
+  .menu button:last-child{border-bottom:none}
+  .menu button:hover{background:#111;color:var(--hot)}
+  .sysid{grid-column:span 4;display:flex;align-items:center;justify-content:flex-end;gap:14px}
+  .sysid .st{font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .sysid .st b{color:var(--ink)}
+  .sysid .st.live b{color:var(--hot)}
+  .stage{grid-column:span 12;height:360;min-height:360px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .stagewrap{position:relative;width:360px;height:340px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+  .taphint{position:absolute;left:50%;top:10px;bottom:auto;transform:translateX(-50%);font-size:9px;letter-spacing:.28em;color:var(--dimmer);text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s}
+  .stagewrap:hover .taphint{opacity:1}
+  #ripple{position:absolute;inset:0;width:100%;height:100%}
+  .ringsvg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+  .num{position:relative;z-index:2;font-weight:300;font-size:120px;line-height:1;color:var(--ink);
+    font-variant-numeric:tabular-nums;transition:transform .05s ease,color .05s ease;user-select:none}
+  .num.idle{font-size:34px;color:var(--dimmer);letter-spacing:.3em}
+  .num.countin{font-size:84px;color:var(--dim);font-weight:300;letter-spacing:0}
+  .num.pulse{transform:scale(1.06)}
+  .num.acc{color:var(--hot)}
+  .stagetag{position:absolute;left:50%;transform:translateX(-50%);bottom:0;padding:14px 18px;font-size:10px;letter-spacing:.24em;color:var(--dimmer);text-transform:uppercase;text-align:center;white-space:nowrap}
+  .read{grid-column:span 4;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;padding:20px 10px;position:relative}
+  .read .k{font-size:10px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
+  .read .v{font-size:26px;font-weight:400;color:var(--ink);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+  .read .v small{font-size:12px;color:var(--dim);margin-left:2px}
+  .read .vrow{display:flex;align-items:center;gap:14px}
+  .chasecol{display:flex;flex-direction:column;gap:5px}
+  .chasecol .cell{width:11px;height:11px;background:#1c2023}
+  .timeline{grid-column:span 12;padding:20px 22px 22px}
+  .timeline .top{display:flex;justify-content:space-between;margin-bottom:14px}
+  .timeline .top .k{font-size:10px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
+  .timeline .top .k b{color:var(--ink)}
+  .ruler{position:relative;height:2px;background:var(--line-hi);margin-bottom:2px}
+  .ruler .fill{position:absolute;left:0;top:0;height:2px;background:var(--ink);width:0;transition:width .18s linear}
+  .ruler .head{position:absolute;top:-3px;width:2px;height:8px;background:var(--hot);transform:translateX(-1px);left:0;transition:left .18s linear}
+  .rticks{position:relative;height:26px;margin-top:2px}
+  .rticks i{position:absolute;top:0;width:1px;background:var(--dimmer)}
+  .rticks i.maj{height:9px;background:var(--dim)}
+  .rticks i.min{height:5px}
+  .rticks i.done{background:var(--ink)}
+  .rticks span{position:absolute;top:12px;transform:translateX(-50%);font-size:10px;color:var(--dim);letter-spacing:.08em}
+  .ctl{display:flex;flex-direction:column;gap:10px;padding:14px 16px;justify-content:center}
+  .ctl .k{font-size:10px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+  .stp{display:flex;align-items:stretch;border:1px solid var(--line)}
+  .stp button{width:34px;background:#000;border:none;border-left:1px solid var(--line);border-right:1px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:16px;cursor:pointer;padding:9px 0}
+  .stp button:first-child{border-left:none}
+  .stp button:last-child{border-right:none}
+  .stp button:hover{background:#111}
+  .stp .v{flex:1;text-align:center;align-self:center;font-size:16px;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+  .stp .v small{font-size:10px;color:var(--dim);margin-left:3px}
+  .btn{display:flex;align-items:center;justify-content:center;height:100%;min-height:64px;cursor:pointer;
+    font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink);background:#000;user-select:none;
+    transition:background .12s,color .12s}
+  .btn:hover{background:#111}
+  .btn.primary{color:var(--ink)}
+  .btn.primary.on{background:var(--sel);color:var(--sel-ink)}
+  .btn.active{background:var(--sel);color:var(--sel-ink)}
+  .btn.off{color:var(--dimmer)}
+  /* ---- icon toggle buttons (SND / VOX) ---- */
+  .icontgl{display:flex;align-items:center;justify-content:center;min-height:64px;cursor:pointer;background:#000;
+    color:var(--ink);transition:background .12s;user-select:none}
+  .icontgl:hover{background:#111}
+  .icontgl svg{width:22px;height:22px;display:block;opacity:1;transition:opacity .12s}
+  .icontgl.off svg{opacity:.32}
+  .icontgl .slash{display:none}
+  .icontgl.off .slash{display:block}
+  .slot{position:relative;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;justify-content:center;min-height:76px}
+  .slot:hover{background:#0c0c0c}
+  .slot input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .slot .k{font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+  .slot .n{font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .n.empty{color:var(--dimmer)}
+  .slot .pv{position:absolute;top:12px;right:14px;font-size:10px;letter-spacing:.15em;color:var(--ink);opacity:0;z-index:3}
+  .slot.loaded .pv{opacity:1}
+  .voicecell{padding:14px 16px;display:flex;flex-direction:column;gap:9px;justify-content:center}
+  .voicecell .row{display:flex;gap:10px;align-items:stretch}
+  select{flex:1 1 auto;min-width:0;max-width:100%;background:#000;color:var(--ink);border:1px solid var(--line);
+    font-family:inherit;font-size:12px;padding:8px 9px;letter-spacing:.04em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  select:focus{outline:1px solid var(--dim)}
+  .iconbtn{flex:0 0 auto;width:40px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);background:#000;cursor:pointer;color:var(--ink)}
+  .iconbtn:hover{background:#111}
+  .iconbtn svg{width:11px;height:11px;display:block}
+  .modecell{padding:14px 16px;display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .toggle{display:flex;border:1px solid var(--line)}
+  .toggle button{flex:1;background:#000;border:none;color:var(--dim);font-family:inherit;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;padding:10px 0;cursor:pointer}
+  .toggle button.sel{background:var(--sel);color:var(--sel-ink)}
+  .prog{grid-column:span 12;padding:16px 18px;display:none}
+  .prog.show{display:block}
+  .prog .phdr{display:flex;justify-content:space-between;margin-bottom:12px}
+  .prog .phdr .k{font-size:10px;letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
+  .prog .phdr .k b{color:var(--ink)}
+  .seg{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:9px 10px;margin-bottom:8px}
+  .seg .idx{font-size:11px;color:var(--dim);letter-spacing:.15em;width:34px}
+  .seg .mini{display:flex;align-items:center;border:1px solid var(--line)}
+  .seg .mini button{width:28px;background:#000;border:none;color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;padding:6px 0}
+  .seg .mini button:hover{background:#111}
+  .seg .mini .mv{min-width:56px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+  .seg .mini .mv small{font-size:9px;color:var(--dim);margin-left:2px}
+  .seg .ml{font-size:9px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+  .seg .rm{margin-left:auto;background:#000;border:1px solid var(--line);color:var(--dim);font-family:inherit;
+    font-size:11px;letter-spacing:.15em;padding:7px 11px;cursor:pointer;text-transform:uppercase}
+  .seg .rm:hover{color:var(--hot);border-color:var(--dim)}
+  .addseg{width:100%;background:#000;border:1px dashed var(--line);color:var(--dim);font-family:inherit;
+    font-size:11px;letter-spacing:.2em;padding:11px 0;cursor:pointer;text-transform:uppercase}
+  .addseg:hover{color:var(--ink);border-color:var(--dim)}
+  .foot{grid-column:span 12;padding:12px 18px;display:flex;justify-content:space-between;font-size:9px;
+    letter-spacing:.2em;color:var(--dimmer);text-transform:uppercase}
+
+  /* ---------- SLIDE-DOWN OVERLAY PANELS (settings / history) ---------- */
+  .panel{position:absolute;left:0;right:0;top:47px;z-index:20;background:#000;border-bottom:0 solid var(--line);
+    max-height:0;overflow:hidden;transition:max-height .28s ease;pointer-events:none}
+  .panel.open{max-height:1400px;pointer-events:auto;border-bottom-width:1px}
+  .panelhdr{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line)}
+  .panelhdr .t{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink)}
+  .panelhdr .x{width:26px;height:26px;border:1px solid var(--line);background:#000;color:var(--dim);
+    font-family:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .panelhdr .x:hover{color:var(--hot);border-color:var(--dim)}
+  .panelbody{padding:0}
+  .panelbody .grid{border-top:none}
+  /* history */
+  .logwrap{padding:14px 18px 20px}
+  .loghead{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr .7fr;gap:8px;font-size:9px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);padding:0 0 10px;border-bottom:1px solid var(--line)}
+  .logrow{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr .7fr;gap:8px;font-size:12px;
+    padding:11px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;align-items:center}
+  .logrow .dt{color:var(--ink)}
+  .logrow .mut{color:var(--dim)}
+  .logrow .done{color:var(--hot)}
+  .logrow .part{color:var(--dim)}
+  .logempty{padding:26px 4px;color:var(--dimmer);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  .logfoot{display:flex;justify-content:space-between;align-items:center;padding:14px 0 0}
+  .logfoot .cnt{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer)}
+  .clearlog{background:#000;border:1px solid var(--line);color:var(--dim);font-family:inherit;
+    font-size:10px;letter-spacing:.18em;padding:8px 14px;cursor:pointer;text-transform:uppercase}
+  .clearlog:hover{color:var(--hot);border-color:var(--dim)}
+
+  /* ---------- MOBILE ---------- */
+  @media (max-width:680px){
+    body{padding:12px}
+    .brand{grid-column:span 7}
+    .brand span{display:none}
+    .sysid{grid-column:span 5}
+    .stagewrap{width:86vw;max-width:340px;height:300px}
+    .num{font-size:96px}
+    .num.idle{font-size:28px}
+    .num.countin{font-size:72px}
+    .read{grid-column:span 4;padding:14px 4px}
+    .read .v{font-size:20px}
+    .chasecol .cell{width:9px;height:9px}
+    #startBtn{grid-column:span 6 !important;min-height:58px}
+    #resetBtn{grid-column:span 3 !important;min-height:58px}
+    #soundBtn,#voxBtn{grid-column:span 1 !important;min-height:58px}
+    .modecell{grid-column:span 12 !important}
+    .voicecell{grid-column:span 12 !important}
+    #dropMain,#dropAccent{grid-column:span 12 !important}
+    .foot{flex-direction:column;gap:6px}
+    .taphint{opacity:1}
+    .loghead,.logrow{grid-template-columns:1.3fr .7fr .7fr .9fr;}
+    .loghead .h-blocks,.logrow .c-blocks{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="instrument">
+  <div class="grid" id="mainGrid">
+    <div class="cell pad brand">
+      <div class="menuwrap">
+        <button class="menudot" id="menuBtn" title="Menu" aria-label="Menu">
+          <svg viewBox="0 0 4 16"><circle cx="2" cy="2" r="1.6" fill="currentColor"/><circle cx="2" cy="8" r="1.6" fill="currentColor"/><circle cx="2" cy="14" r="1.6" fill="currentColor"/></svg>
+        </button>
+        <div class="menu" id="menu">
+          <button data-panel="settings">Settings</button>
+          <button data-panel="history">History</button>
+        </div>
+      </div>
+      <div class="mark"></div>
+    </div>
+    <div class="cell pad sysid">
+      <div class="st">SIG <b>4/4</b></div>
+      <div class="st live" id="stateChip">● <b>READY</b></div>
+    </div>
+    <div class="cell stage">
+      <div class="stagewrap">
+        <canvas id="ripple" width="360" height="340"></canvas>
+        <svg class="ringsvg" width="224" height="224" viewBox="0 0 224 224">
+          <circle cx="112" cy="112" r="100" fill="none" stroke="var(--dimmer)" stroke-width="1.5"/>
+        </svg>
+        <div class="num idle" id="num">READY</div>
+        <div class="taphint" id="taphint">Tap to play / pause</div>
+        <div class="stagetag" id="tagL">STROKE 000 / <span id="tagTotal">660</span></div>
+      </div>
+    </div>
+    <div class="cell read"><div class="k">Tempo</div><div class="v" id="bpmVal">88<small>BPM</small></div></div>
+    <div class="cell read">
+      <div class="k">Stroke Rate</div>
+      <div class="vrow">
+        <div class="v" id="spmValR">22<small>SPM</small></div>
+        <div class="chasecol" id="chase"><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+      </div>
+    </div>
+    <div class="cell read"><div class="k">Block</div><div class="v"><span id="blockNum">1</span><small>/ <span id="blockTotal">6</span></small></div></div>
+    <div class="cell timeline">
+      <div class="top">
+        <div class="k">Session &nbsp; <b id="elapsedTxt">0:00</b> / <b id="totalTxt">30:00</b></div>
+        <div class="k">Next checkpoint <b id="nextCkpt">5:00</b></div>
+      </div>
+      <div class="ruler"><div class="fill" id="rFill"></div><div class="head" id="rHead"></div></div>
+      <div class="rticks" id="rticks"></div>
+    </div>
+    <!-- transport row: Play / Stop + icon toggles -->
+    <div class="cell btn primary" id="startBtn" style="grid-column:span 6">Play</div>
+    <div class="cell btn" id="resetBtn" style="grid-column:span 4">Stop</div>
+    <div class="cell icontgl" id="soundBtn" style="grid-column:span 1" title="Click sound on/off" aria-label="Click sound">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12h2l2-5 3 12 3-16 2.5 9H21"/>
+        <line class="slash" x1="3" y1="21" x2="21" y2="3" stroke-width="1.4"/>
+      </svg>
+    </div>
+    <div class="cell icontgl" id="voxBtn" style="grid-column:span 1" title="Voice cues on/off" aria-label="Voice cues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+        <path d="M5.5 11a6.5 6.5 0 0 0 13 0"/>
+        <line x1="12" y1="17.5" x2="12" y2="21"/>
+        <line class="slash" x1="3" y1="21" x2="21" y2="3" stroke-width="1.4"/>
+      </svg>
+    </div>
+    <div class="cell foot">
+      <span>SPACE = PLAY / PAUSE · 4-BEAT COUNT-IN</span>
+      <span id="footStat">SYNTH FALLBACK · INTERNAL VOICE CUES</span>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS PANEL (behind dot menu) ===== -->
+  <div class="panel" id="settingsPanel">
+    <div class="panelhdr"><div class="t">Settings</div><button class="x" data-close>✕</button></div>
+    <div class="panelbody">
+      <div class="grid">
+        <div class="cell ctl" style="grid-column:span 3">
+          <div class="k">Rate</div>
+          <div class="stp"><button data-act="spm-">–</button><div class="v" id="spmStep">22<small>SPM</small></div><button data-act="spm+">+</button></div>
+        </div>
+        <div class="cell ctl" style="grid-column:span 3">
+          <div class="k">Length</div>
+          <div class="stp"><button data-act="dur-">–</button><div class="v" id="durStep">30<small>MIN</small></div><button data-act="dur+">+</button></div>
+        </div>
+        <div class="cell modecell" style="grid-column:span 6">
+          <div class="k">Mode</div>
+          <div class="toggle" id="modeToggle">
+            <button data-mode="steady" class="sel">Steady</button>
+            <button data-mode="interval">Interval</button>
+          </div>
+        </div>
+        <div class="cell voicecell" style="grid-column:span 12">
+          <div class="k">Voice cue · en-GB female preferred (macOS / iOS)</div>
+          <div class="row">
+            <select id="voiceSel"><option>Loading voices…</option></select>
+            <div class="iconbtn" id="voxTest" title="Test voice"><svg viewBox="0 0 10 10"><polygon points="1,0 9,5 1,10" fill="currentColor"/></svg></div>
+          </div>
+        </div>
+        <div class="cell prog" id="prog" style="grid-column:span 12">
+          <div class="phdr"><div class="k">Program</div><div class="k">Total <b id="progTotal">30 MIN</b> · Rates 20 / 22 / 24</div></div>
+          <div id="segList"></div>
+          <button class="addseg" id="addSeg">+ Add segment</button>
+        </div>
+        <label class="cell slot" id="dropMain" style="grid-column:span 6">
+          <div class="k">Sample A · Beats 1–3</div>
+          <div class="n empty" id="nameMain">— load .wav / .mp3 —</div>
+          <div class="pv" data-preview="main">▶ TEST</div>
+          <input type="file" accept="audio/*" id="fileMain" />
+        </label>
+        <label class="cell slot" id="dropAccent" style="grid-column:span 6">
+          <div class="k">Sample B · Beat 4 accent</div>
+          <div class="n empty" id="nameAccent">— load .wav / .mp3 —</div>
+          <div class="pv" data-preview="accent">▶ TEST</div>
+          <input type="file" accept="audio/*" id="fileAccent" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HISTORY PANEL (behind dot menu) ===== -->
+  <div class="panel" id="historyPanel">
+    <div class="panelhdr"><div class="t">Session History</div><button class="x" data-close>✕</button></div>
+    <div class="panelbody">
+      <div class="logwrap">
+        <div class="loghead">
+          <div>Date</div><div>Rate</div><div>Length</div><div class="h-blocks">Blocks</div><div>Status</div>
+        </div>
+        <div id="logList"></div>
+        <div class="logfoot">
+          <div class="cnt" id="logCount">0 sessions</div>
+          <button class="clearlog" id="clearLog">Clear log</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+(() => {
+  const BEATS_PER_STROKE = 4, SEGMENT_SEC = 300;
+  const COUNT_IN_BEATS = 4;
+  let countingIn = false;
+  let steady = true;
+  let steadySpm = 22, steadyMin = 30;
+  let segments = [{spm:22,min:10},{spm:24,min:10},{spm:20,min:10}];
+  function activeSegs(){ return steady ? [{spm:steadySpm,min:steadyMin}] : segments; }
+  function displayTotalSec(){ return activeSegs().reduce((a,s)=>a+s.min*60,0); }
+  let timeline=[]; let TOTAL=0;
+  function buildTimeline(){
+    timeline=[]; let t=0, stroke=0;
+    activeSegs().forEach(seg=>{
+      const spb=60/(seg.spm*BEATS_PER_STROKE);
+      const nBeats=Math.round(seg.min*60/spb);
+      for(let i=0;i<nBeats;i++){
+        const beatNo=(i%BEATS_PER_STROKE)+1;
+        if(beatNo===1) stroke++;
+        timeline.push({t:t, beatNo:beatNo, accent:beatNo===BEATS_PER_STROKE, spm:seg.spm, strokeNo:stroke});
+        t+=spb;
+      }
+    });
+    TOTAL=displayTotalSec();
+  }
+  function spmAt(el){
+    let acc=0; const segs=activeSegs();
+    for(const s of segs){ acc+=s.min*60; if(el<acc) return s.spm; }
+    return segs[segs.length-1].spm;
+  }
+  function nextChange(el){
+    const segs=activeSegs(); let acc=0;
+    for(let i=0;i<segs.length-1;i++){
+      acc+=segs[i].min*60;
+      if(el<acc && segs[i+1].spm!==segs[i].spm){
+        return {atSec:acc, fromSpm:segs[i].spm, toSpm:segs[i+1].spm};
+      }
+    }
+    return null;
+  }
+  function totalStrokes(){ return activeSegs().reduce((a,s)=>a+s.spm*s.min,0); }
+  let audioCtx=null, running=false, soundOn=true;
+  let startTime=0, nextIdx=0, schedulerId=null, lastElapsed=0;
+  const LOOKAHEAD=25, SCHEDULE_AHEAD=0.14, queue=[];
+  const buffers={main:null,accent:null};
+  function makeCtx(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
+  function playSynth(time,acc){
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=acc?1180:760;o.type="square";
+    const pk=acc?0.5:0.32;
+    g.gain.setValueAtTime(0.0001,time);
+    g.gain.exponentialRampToValueAtTime(pk,time+0.001);
+    g.gain.exponentialRampToValueAtTime(0.0001,time+0.045);
+    o.connect(g).connect(audioCtx.destination);o.start(time);o.stop(time+0.06);
+  }
+  function playBuffer(buf,time){const s=audioCtx.createBufferSource();s.buffer=buf;s.connect(audioCtx.destination);s.start(time);}
+  function playBeat(time,acc){ if(!soundOn) return; const b=acc?buffers.accent:buffers.main; b?playBuffer(b,time):playSynth(time,acc); }
+  function scheduler(){
+    const base=startTime;
+    while(nextIdx<timeline.length){
+      const b=timeline[nextIdx];
+      if(b.t < (audioCtx.currentTime-base)+SCHEDULE_AHEAD){
+        playBeat(base+b.t,b.accent);
+        queue.push({time:base+b.t,beatNo:b.beatNo,accent:b.accent,strokeNo:b.strokeNo});
+        nextIdx++;
+      } else break;
+    }
+  }
+  let voxOn=true, voices=[], chosenVoice=null, lastCp=0;
+  const voiceSel=document.getElementById('voiceSel');
+  function rankVoice(v){
+    let s=0; const n=(v.name||'').toLowerCase(), l=(v.lang||'').toLowerCase();
+    if(l.startsWith('en-gb') || l==='en_gb') s+=6; else if(l.startsWith('en')) s+=2;
+    // ----- Apple (macOS / iOS) en-GB female voices -----
+    if(/\b(kate|serena|stephanie|martha|fiona)\b/.test(n)) s+=6;
+    if(/\b(siri)\b/.test(n) && l.startsWith('en-gb')) s+=5;
+    // ----- Microsoft / other en-GB female voices (fallback) -----
+    if(/\b(libby|sonia|hazel|amy|emma)\b/.test(n)) s+=4;
+    if(/google uk english female/.test(n)) s+=5;
+    if(/female/.test(n)) s+=4;
+    if(/enhanced|premium|natural/.test(n)) s+=2;   // prefer Apple "Enhanced/Premium" downloads
+    if(/\b(daniel|george|arthur|male|oliver|rishi)\b/.test(n)) s-=5;
+    return s;
+  }
+  function loadVoices(){
+    voices=(window.speechSynthesis?speechSynthesis.getVoices():[])||[];
+    voiceSel.innerHTML='';
+    if(!voices.length){ voiceSel.innerHTML='<option>No system voices found</option>'; return; }
+    const sorted=[...voices].map((v,i)=>({v,i})).sort((a,b)=>rankVoice(b.v)-rankVoice(a.v));
+    sorted.forEach(({v,i})=>{
+      const o=document.createElement('option');
+      o.value=i; o.textContent=v.name+' · '+v.lang;
+      voiceSel.appendChild(o);
+    });
+    chosenVoice=sorted[0].v; voiceSel.value=sorted[0].i;
+  }
+  voiceSel.addEventListener('change',()=>{ chosenVoice=voices[+voiceSel.value]||null; });
+  if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=loadVoices; loadVoices(); }
+  function say(text){
+    if(!voxOn || !window.speechSynthesis) return;
+    const u=new SpeechSynthesisUtterance(text);
+    if(chosenVoice) u.voice=chosenVoice;
+    u.rate=0.94; u.pitch=1.0; u.volume=1.0;
+    speechSynthesis.speak(u);
+  }
+  const numEl=document.getElementById('num');
+  const fmt=s=>{s=Math.max(0,Math.ceil(s));const m=Math.floor(s/60),x=s%60;return m+':'+String(x).padStart(2,'0');};
+  const cvs=document.getElementById('ripple'), cx=cvs.getContext('2d');
+  const CW=cvs.width, CH=cvs.height, MX=CW/2, MY=CH/2, R0=100;
+  let ripples=[];
+  function firePulse(accent){
+    if(accent){
+      // organic "press reaction" — randomized so every accent looks a little different
+      const rand=(a,b)=>a+Math.random()*(b-a);
+      ripples.push({
+        start:performance.now(), accent:true,
+        rings:[
+          { l1:rand(2,5), a1:rand(6,11), p1:rand(0,6.28), l2:rand(5,9), a2:rand(3,6), p2:rand(0,6.28), rot:rand(-0.5,0.5), speed:rand(88,104), delay:0 },
+          { l1:rand(3,6), a1:rand(4,8),  p1:rand(0,6.28), l2:rand(6,10),a2:rand(2,5), p2:rand(0,6.28), rot:rand(-0.6,0.6), speed:rand(70,88),  delay:0.06 }
+        ]
+      });
+    }else{
+      ripples.push({start:performance.now(),accent:false});
+    }
+  }
+  function renderRipple(){
+    cx.clearRect(0,0,CW,CH);
+    const now=performance.now();
+    ripples=ripples.filter(r=>(now-r.start)/1000<1.15);
+    for(const r of ripples){
+      const t=(now-r.start)/1000;
+      if(r.accent){
+        // wavy, uneven rings radiating out — like the ring is reacting to being pressed
+        const SEG=120;
+        for(const g of r.rings){
+          const tt=t-g.delay; if(tt<=0) continue;
+          const base=R0+4+tt*g.speed;                 // expanding radius
+          const env=Math.max(0,1-tt*1.05);            // fade envelope
+          if(env<=0.01) continue;
+          // amplitude swells on impact then relaxes as it travels out
+          const amp=(g.a1)*(0.6+0.4*Math.sin(Math.min(tt*6,Math.PI)))*(0.5+0.5*env);
+          const amp2=(g.a2)*(0.5+0.5*env);
+          cx.strokeStyle='rgba(228,230,233,'+(env*0.85)+')';
+          cx.lineWidth=1.25;
+          cx.beginPath();
+          for(let i=0;i<=SEG;i++){
+            const a=(i/SEG)*Math.PI*2 + g.rot*tt;
+            // two non-harmonic sines = organic, non-uniform wobble
+            const wob=Math.sin(a*g.l1+g.p1)*amp + Math.sin(a*g.l2+g.p2)*amp2;
+            const rr=base+wob;
+            const x=MX+Math.cos(a)*rr, y=MY+Math.sin(a)*rr;
+            if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y);
+          }
+          cx.closePath();
+          cx.stroke();
+        }
+      }else{
+        const rad=R0+t*95, alpha=Math.max(0,1-t*1.0)*0.55;
+        cx.strokeStyle='rgba(215,217,220,'+alpha+')';
+        cx.lineWidth=1.5;
+        cx.beginPath(); cx.arc(MX,MY,rad,0,Math.PI*2); cx.stroke();
+      }
+    }
+    requestAnimationFrame(renderRipple);
+  }
+  requestAnimationFrame(renderRipple);
+  // ===== chase indicator =====
+  const chaseCells=[...document.querySelectorAll('#chase .cell')];
+  const CN=chaseCells.length;
+  const CHASE_STEP_MS=170;
+  const CHASE_GAP_MS=170;
+  const CHASE_PASSES=4;
+  let chaseTimer=null, armedForChange=null;
+  function paintChase(head,dir){
+    chaseCells.forEach((c,i)=>{
+      let behind = dir<0 ? i-head : head-i;
+      let a = behind===0 ? 1 : (behind>0 ? Math.max(0,0.55-(behind-1)*0.22) : 0);
+      if(a<=0.02){ c.style.background='#1c2023'; return; }
+      const r=Math.round(28+a*(233-28)), g=Math.round(32+a*(237-32)), b=Math.round(35+a*(240-35));
+      c.style.background=`rgb(${r},${g},${b})`;
+    });
+  }
+  function idleChase(){ chaseCells.forEach(c=>c.style.background='#1c2023'); }
+  function stopChaseTimer(){ if(chaseTimer){ clearInterval(chaseTimer); chaseTimer=null; } idleChase(); }
+  function armChase(dir){
+    stopChaseTimer();
+    const seq = dir<0 ? [CN-1,CN-2,CN-3,CN-4] : [0,1,2,3];
+    let step=0, gap=0, pass=0;
+    const gapSteps=Math.max(1,Math.round(CHASE_GAP_MS/CHASE_STEP_MS));
+    chaseTimer=setInterval(()=>{
+      if(gap>0){ gap--; return; }
+      if(step>=seq.length){
+        step=0; pass++;
+        if(pass>=CHASE_PASSES){ stopChaseTimer(); return; }
+        gap=gapSteps; idleChase(); return;
+      }
+      paintChase(seq[step], dir);
+      step++;
+    }, CHASE_STEP_MS);
+  }
+  function disarmChase(){ stopChaseTimer(); armedForChange=null; }
+  idleChase();
+  function triggerBeat(b){
+    if(b.countIn){
+      numEl.className='num countin';
+      numEl.textContent=b.number;
+      firePulse(false);
+      return;
+    }
+    numEl.classList.remove('idle','countin');
+    numEl.textContent=b.beatNo;
+    numEl.classList.add('pulse');
+    numEl.classList.toggle('acc',b.accent);
+    firePulse(b.accent);
+    document.getElementById('tagL').innerHTML='STROKE '+String(b.strokeNo).padStart(3,'0')+' / <span id="tagTotal">'+totalStrokes()+'</span>';
+    setTimeout(()=>numEl.classList.remove('pulse'),70);
+  }
+  function draw(){
+    if(running){
+      const now=audioCtx.currentTime;
+      while(queue.length && queue[0].time<=now) triggerBeat(queue.shift());
+      if(now>=startTime){
+        if(countingIn){ countingIn=false; setState('ROWING',true); }
+        const el=Math.min(now-startTime,TOTAL);
+        updateReadouts(el);
+        if(now-startTime>=TOTAL) finishSession();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  function updateReadouts(el){
+    document.getElementById('elapsedTxt').textContent=fmt(el);
+    document.getElementById('rFill').style.width=(el/TOTAL*100)+'%';
+    document.getElementById('rHead').style.left=(el/TOTAL*100)+'%';
+    const bi=Math.floor(el/SEGMENT_SEC);
+    const into=el-bi*SEGMENT_SEC, rem=Math.min(SEGMENT_SEC-into,TOTAL-el);
+    document.getElementById('blockNum').textContent=Math.min(bi+1,Math.ceil(TOTAL/SEGMENT_SEC));
+    document.getElementById('nextCkpt').textContent=fmt(rem);
+    const spm=spmAt(el), bpm=spm*BEATS_PER_STROKE;
+    document.getElementById('bpmVal').innerHTML=bpm+'<small>BPM</small>';
+    document.getElementById('spmValR').innerHTML=spm+'<small>SPM</small>';
+    const ticks=[...document.querySelectorAll('#rticks i')];
+    const doneX=el/TOTAL*100;
+    ticks.forEach(tk=>tk.classList.toggle('done', parseFloat(tk.dataset.pct)<=doneX));
+    const cp=Math.floor(el/SEGMENT_SEC);
+    if(cp>lastCp && cp*SEGMENT_SEC < TOTAL-1){ say((cp*5)+' minutes'); }
+    lastCp=cp;
+    const nc=nextChange(el);
+    if(nc){
+      const spb=60/(spm*BEATS_PER_STROKE);
+      const leadSec=spb*BEATS_PER_STROKE*2;
+      const until = nc.atSec - el;
+      if(until<=leadSec && until>0 && armedForChange!==nc.atSec){
+        armChase(nc.toSpm>nc.fromSpm ? -1 : 1);
+        armedForChange=nc.atSec;
+      }
+    }
+    if(armedForChange!==null && el>=armedForChange){ armedForChange=null; }
+  }
+  function buildRuler(){
+    const totalMin=Math.round(TOTAL/60);
+    const wrap=document.getElementById('rticks'); wrap.innerHTML='';
+    for(let m=0;m<=totalMin;m++){
+      const pct=m/totalMin*100;
+      const i=document.createElement('i');
+      i.className=(m%5===0)?'maj':'min';
+      i.style.left=pct+'%'; i.dataset.pct=pct;
+      wrap.appendChild(i);
+      if(m%5===0){
+        const s=document.createElement('span'); s.style.left=pct+'%'; s.textContent=m;
+        if(m===0) s.style.transform='translateX(0)';
+        if(m===totalMin) s.style.transform='translateX(-100%)';
+        wrap.appendChild(s);
+      }
+    }
+    document.getElementById('blockTotal').textContent=Math.ceil(TOTAL/SEGMENT_SEC);
+    document.getElementById('totalTxt').textContent=fmt(TOTAL);
+    document.getElementById('tagTotal').textContent=totalStrokes();
+  }
+  function setState(txt,live){const c=document.getElementById('stateChip');c.innerHTML='● <b>'+txt+'</b>';c.classList.toggle('live',!!live);}
+
+  // ===================== SESSION LOG (localStorage) =====================
+  const LOG_KEY='rowSessionLog';
+  let sessionStarted=false;           // guards partial logging
+  function getLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||'[]'); }catch(e){ return []; } }
+  function setLog(a){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(a)); }catch(e){} }
+  function sessionLabel(){
+    if(steady) return {rate:steadySpm+' SPM', len:steadyMin+' MIN', totalSec:steadyMin*60, blocks:Math.ceil(steadyMin*60/SEGMENT_SEC)};
+    const rates=[...new Set(segments.map(s=>s.spm))].join('/');
+    const mins=segments.reduce((a,s)=>a+s.min,0);
+    return {rate:rates+' SPM', len:mins+' MIN', totalSec:mins*60, blocks:Math.ceil(mins*60/SEGMENT_SEC)};
+  }
+  function logSession(completed, elapsedSec){
+    const meta=sessionLabel();
+    const doneSec = completed ? meta.totalSec : Math.min(elapsedSec||0, meta.totalSec);
+    if(doneSec < 20) return;          // ignore trivially short runs
+    const blocksDone = Math.min(meta.blocks, Math.floor(doneSec/SEGMENT_SEC) + (completed?0: (doneSec%SEGMENT_SEC>0?1:0)));
+    const rec={
+      date:new Date().toISOString(),
+      rate:meta.rate,
+      len:meta.len,
+      mode:steady?'steady':'interval',
+      elapsed:fmt(doneSec),
+      blocksDone:completed?meta.blocks:blocksDone,
+      blocksTotal:meta.blocks,
+      completed:!!completed
+    };
+    const log=getLog(); log.unshift(rec);
+    if(log.length>200) log.length=200;
+    setLog(log);
+    renderHistory();
+  }
+  function renderHistory(){
+    const list=document.getElementById('logList');
+    const log=getLog();
+    document.getElementById('logCount').textContent=log.length+(log.length===1?' session':' sessions');
+    if(!log.length){ list.innerHTML='<div class="logempty">No sessions logged yet — finish a row and it lands here.</div>'; return; }
+    list.innerHTML='';
+    log.forEach(r=>{
+      const d=new Date(r.date);
+      const dateStr=d.toLocaleDateString(undefined,{year:'numeric',month:'2-digit',day:'2-digit'});
+      const timeStr=d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      const row=document.createElement('div'); row.className='logrow';
+      row.innerHTML=
+        '<div class="dt">'+dateStr+' <span class="mut">'+timeStr+'</span></div>'+
+        '<div>'+r.rate+'</div>'+
+        '<div>'+(r.completed?r.len:r.elapsed+' / '+r.len)+'</div>'+
+        '<div class="c-blocks mut">'+r.blocksDone+' / '+r.blocksTotal+'</div>'+
+        '<div class="'+(r.completed?'done':'part')+'">'+(r.completed?'✓ done':'— partial')+'</div>';
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('clearLog').addEventListener('click',()=>{
+    if(confirm('Clear all logged sessions on this device?')){ setLog([]); renderHistory(); }
+  });
+
+  function start(){
+    makeCtx(); if(audioCtx.state==='suspended') audioCtx.resume();
+    if(window.speechSynthesis) speechSynthesis.cancel();
+    running=true; nextIdx=0; queue.length=0; lastCp=0; disarmChase();
+    sessionStarted=true;
+    const now=audioCtx.currentTime;
+    const startSpm=steady?steadySpm:activeSegs()[0].spm;
+    const spb0=60/(startSpm*BEATS_PER_STROKE);
+    const t0=now+0.15;
+    countingIn=true;
+    for(let i=0;i<COUNT_IN_BEATS;i++){
+      const ct=t0+i*spb0;
+      playBeat(ct,false);
+      queue.push({time:ct, countIn:true, number:COUNT_IN_BEATS-i});
+    }
+    startTime=t0+COUNT_IN_BEATS*spb0;
+    schedulerId=setInterval(scheduler,LOOKAHEAD);
+    const b=document.getElementById('startBtn'); b.textContent='Pause'; b.classList.add('on');
+    setState('COUNT IN',true); lockConfig(true);
+  }
+  function pause(){
+    running=false; clearInterval(schedulerId);
+    if(window.speechSynthesis) speechSynthesis.cancel();
+    const b=document.getElementById('startBtn'); b.textContent='Play'; b.classList.remove('on');
+    setState('PAUSED',false);
+  }
+  function resume(){
+    running=true; countingIn=false; const now=audioCtx.currentTime;
+    startTime=now-lastElapsed;
+    nextIdx=timeline.findIndex(b=>b.t>=lastElapsed); if(nextIdx<0) nextIdx=timeline.length;
+    lastCp=Math.floor(lastElapsed/SEGMENT_SEC);
+    schedulerId=setInterval(scheduler,LOOKAHEAD);
+    const b=document.getElementById('startBtn'); b.textContent='Pause'; b.classList.add('on');
+    setState('ROWING',true);
+  }
+  function finishSession(){
+    running=false; clearInterval(schedulerId); disarmChase();
+    updateReadouts(TOTAL);
+    document.getElementById('rFill').style.width='100%';
+    document.getElementById('rHead').style.left='100%';
+    numEl.className='num idle'; numEl.textContent='DONE';
+    const b=document.getElementById('startBtn'); b.textContent='Play'; b.classList.remove('on');
+    setState('COMPLETE',false); lockConfig(false);
+    say('Row complete.');
+    logSession(true);                 // <-- log a completed session
+    sessionStarted=false;
+    resetPos();
+  }
+  function resetPos(){ nextIdx=0; queue.length=0; lastElapsed=0; }
+  function fullReset(){
+    // if a run was in progress, log it as a partial before wiping state
+    if(sessionStarted && lastElapsed>0){ logSession(false, lastElapsed); }
+    sessionStarted=false;
+    running=false; countingIn=false; clearInterval(schedulerId); resetPos(); lastCp=0; disarmChase();
+    if(window.speechSynthesis) speechSynthesis.cancel();
+    document.getElementById('elapsedTxt').textContent='0:00';
+    document.getElementById('nextCkpt').textContent='5:00';
+    document.getElementById('blockNum').textContent='1';
+    document.getElementById('rFill').style.width='0%';
+    document.getElementById('rHead').style.left='0%';
+    [...document.querySelectorAll('#rticks i')].forEach(t=>t.classList.remove('done'));
+    numEl.className='num idle'; numEl.textContent='READY';
+    document.getElementById('tagL').innerHTML='STROKE 000 / <span id="tagTotal">'+totalStrokes()+'</span>';
+    const b=document.getElementById('startBtn'); b.textContent='Play'; b.classList.remove('on');
+    setState('READY',true); lockConfig(false);
+  }
+  function lockConfig(on){
+    document.querySelectorAll('.stp,.toggle,#addSeg,#segList').forEach(el=>{
+      el.style.opacity=on?.4:1; el.style.pointerEvents=on?'none':'auto';
+    });
+  }
+  (function trackElapsed(){ if(running&&audioCtx) lastElapsed=audioCtx.currentTime-startTime; requestAnimationFrame(trackElapsed); })();
+  function refresh(){
+    buildTimeline(); buildRuler();
+    document.getElementById('spmStep').innerHTML=steadySpm+'<small>SPM</small>';
+    document.getElementById('durStep').innerHTML=steadyMin+'<small>MIN</small>';
+    document.getElementById('bpmVal').innerHTML=(steady?steadySpm*4:activeSegs()[0].spm*4)+'<small>BPM</small>';
+    document.getElementById('spmValR').innerHTML=(steady?steadySpm:activeSegs()[0].spm)+'<small>SPM</small>';
+    document.getElementById('progTotal').textContent=Math.round(displayTotalSec()/60)+' MIN';
+    fullReset();
+  }
+  document.querySelectorAll('.stp button').forEach(btn=>btn.addEventListener('click',()=>{
+    const a=btn.dataset.act;
+    if(a==='spm+') steadySpm=Math.min(30,steadySpm+2);
+    if(a==='spm-') steadySpm=Math.max(16,steadySpm-2);
+    if(a==='dur+') steadyMin=Math.min(60,steadyMin+5);
+    if(a==='dur-') steadyMin=Math.max(5,steadyMin-5);
+    refresh();
+  }));
+  document.getElementById('startBtn').addEventListener('click',()=>{ if(!running){ (lastElapsed>0&&audioCtx)?resume():start(); } else pause(); });
+  document.querySelector('.stagewrap').addEventListener('click',()=>{ document.getElementById('startBtn').click(); });
+  document.getElementById('resetBtn').addEventListener('click',fullReset);
+  // ---- icon toggles ----
+  document.getElementById('soundBtn').addEventListener('click',e=>{ soundOn=!soundOn; e.currentTarget.classList.toggle('off',!soundOn); e.currentTarget.title=soundOn?'Click sound on':'Click sound off (muted)'; });
+  document.getElementById('voxBtn').addEventListener('click',e=>{ voxOn=!voxOn; e.currentTarget.classList.toggle('off',!voxOn); e.currentTarget.title=voxOn?'Voice cues on':'Voice cues off'; if(!voxOn&&window.speechSynthesis) speechSynthesis.cancel(); });
+  document.getElementById('voxTest').addEventListener('click',()=>say('Five minutes'));
+  document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); document.getElementById('startBtn').click(); } });
+  document.querySelectorAll('#modeToggle button').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('#modeToggle button').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    steady = btn.dataset.mode==='steady';
+    document.getElementById('prog').classList.toggle('show',!steady);
+    renderSegs(); refresh();
+  }));
+  function renderSegs(){
+    const list=document.getElementById('segList'); list.innerHTML='';
+    segments.forEach((seg,i)=>{
+      const row=document.createElement('div'); row.className='seg';
+      row.innerHTML=
+        '<div class="idx">'+String(i+1).padStart(2,'0')+'</div>'+
+        '<div class="mini"><button data-i="'+i+'" data-f="spm-">–</button><div class="mv">'+seg.spm+'<small>SPM</small></div><button data-i="'+i+'" data-f="spm+">+</button></div>'+
+        '<div class="ml">rate</div>'+
+        '<div class="mini"><button data-i="'+i+'" data-f="min-">–</button><div class="mv">'+seg.min+'<small>MIN</small></div><button data-i="'+i+'" data-f="min+">+</button></div>'+
+        '<div class="ml">length</div>'+
+        '<button class="rm" data-i="'+i+'" data-f="rm">Remove</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+      const i=+b.dataset.i, f=b.dataset.f;
+      if(f==='spm+') segments[i].spm=Math.min(24,segments[i].spm+2);
+      if(f==='spm-') segments[i].spm=Math.max(20,segments[i].spm-2);
+      if(f==='min+') segments[i].min=Math.min(60,segments[i].min+1);
+      if(f==='min-') segments[i].min=Math.max(1,segments[i].min-1);
+      if(f==='rm' && segments.length>1) segments.splice(i,1);
+      let tot=segments.reduce((a,s)=>a+s.min,0);
+      while(tot>60){ const last=segments[segments.length-1]; if(last.min>1){last.min--;} else {segments.pop();} tot=segments.reduce((a,s)=>a+s.min,0);}
+      renderSegs(); refresh();
+    }));
+  }
+  document.getElementById('addSeg').addEventListener('click',()=>{
+    const tot=segments.reduce((a,s)=>a+s.min,0);
+    if(tot>=60) return;
+    segments.push({spm:22,min:Math.min(5,60-tot)});
+    renderSegs(); refresh();
+  });
+  async function loadSample(file,key,nameEl,dropEl){
+    makeCtx();
+    try{ const buf=await audioCtx.decodeAudioData(await file.arrayBuffer());
+      buffers[key]=buf; nameEl.textContent=file.name; nameEl.classList.remove('empty'); dropEl.classList.add('loaded');
+      document.getElementById('footStat').textContent='CUSTOM SAMPLES ACTIVE · INTERNAL VOICE CUES';
+    }catch(e){ nameEl.textContent='decode error'; console.error(e); }
+  }
+  document.getElementById('fileMain').addEventListener('change',e=>{ if(e.target.files[0]) loadSample(e.target.files[0],'main',document.getElementById('nameMain'),document.getElementById('dropMain')); });
+  document.getElementById('fileAccent').addEventListener('change',e=>{ if(e.target.files[0]) loadSample(e.target.files[0],'accent',document.getElementById('nameAccent'),document.getElementById('dropAccent')); });
+  document.querySelectorAll('.pv').forEach(p=>p.addEventListener('click',ev=>{
+    ev.preventDefault(); ev.stopPropagation(); makeCtx();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    const k=p.dataset.preview; if(buffers[k]) playBuffer(buffers[k],audioCtx.currentTime+0.02); else playSynth(audioCtx.currentTime+0.02,k==='accent');
+  }));
+
+  // ===================== MENU + PANELS =====================
+  const menu=document.getElementById('menu');
+  const menuBtn=document.getElementById('menuBtn');
+  const panels={settings:document.getElementById('settingsPanel'), history:document.getElementById('historyPanel')};
+  function closePanels(){ Object.values(panels).forEach(p=>p.classList.remove('open')); }
+  function openPanel(name){
+    const wasOpen=panels[name].classList.contains('open');
+    closePanels();
+    if(!wasOpen){ panels[name].classList.add('open'); if(name==='history') renderHistory(); }
+  }
+  menuBtn.addEventListener('click',e=>{ e.stopPropagation(); menu.classList.toggle('open'); });
+  menu.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ openPanel(b.dataset.panel); menu.classList.remove('open'); }));
+  document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',closePanels));
+  document.addEventListener('click',e=>{ if(!menu.contains(e.target)&&e.target!==menuBtn) menu.classList.remove('open'); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closePanels(); menu.classList.remove('open'); } });
+
+  renderSegs();
+  renderHistory();
+  refresh();
+  draw();
+})();
+</script>
+</body>
+</html>
